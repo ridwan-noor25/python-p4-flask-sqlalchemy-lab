@@ -1,50 +1,29 @@
-#!/usr/bin/env python3
-
-from random import choice as rc
-
-from faker import Faker
-
-from app import app
-from models import db, Zookeeper, Animal, Enclosure
-
-fake = Faker()
+from app import app, db
+from models import Animal, Zookeeper, Enclosure
 
 with app.app_context():
-
+    print("Clearing old data...")
     Animal.query.delete()
     Zookeeper.query.delete()
     Enclosure.query.delete()
 
-    zookeepers = []
-    for n in range(25):
-        zk = Zookeeper(name=fake.name(), birthday=fake.date_between(
-            start_date='-70y', end_date='-18y'))
-        zookeepers.append(zk)
+    print("Seeding database...")
 
-    db.session.add_all(zookeepers)
+    # Zookeepers
+    zk1 = Zookeeper(name="Dylan Taylor", birthday="1990-06-12")
+    zk2 = Zookeeper(name="Stephanie Contreras", birthday="1996-09-20")
+    db.session.add_all([zk1, zk2])
 
-    enclosures = []
-    environments = ['Desert', 'Pond', 'Ocean', 'Field', 'Trees', 'Cave', 'Cage']
+    # Enclosures
+    enc1 = Enclosure(environment="trees", open_to_visitors=True)
+    enc2 = Enclosure(environment="pond", open_to_visitors=False)
+    db.session.add_all([enc1, enc2])
 
-    for n in range(25):
-        e = Enclosure(environment=rc(environments), open_to_visitors=rc([True, False]))
-        enclosures.append(e)
+    # Animals
+    a1 = Animal(name="Logan", species="Snake", zookeeper=zk1, enclosure=enc1)
+    a2 = Animal(name="Lilly", species="Tiger", zookeeper=zk2, enclosure=enc2)
+    a3 = Animal(name="Bobby", species="Giraffe", zookeeper=zk1, enclosure=enc1)
+    db.session.add_all([a1, a2, a3])
 
-    db.session.add_all(enclosures)
-
-    animals = []
-    species = ['Lion', 'Tiger', 'Bear', 'Hippo', 'Rhino', 'Elephant', 'Ostrich',
-        'Snake', 'Monkey']
-
-    for n in range(200):
-        name = fake.first_name()
-        while name in [a.name for a in animals]:
-            name=fake.first_name()
-        a = Animal(name=name, species=rc(species))
-        a.zookeeper = rc(zookeepers)
-        a.enclosure = rc(enclosures)
-        animals.append(a)
-
-    db.session.add_all(animals)
     db.session.commit()
-
+    print("Done seeding!")
